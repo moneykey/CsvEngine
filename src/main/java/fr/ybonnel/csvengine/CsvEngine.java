@@ -39,6 +39,10 @@ import fr.ybonnel.csvengine.model.Result;
 import fr.ybonnel.csvengine.validator.ValidateException;
 import fr.ybonnel.csvengine.validator.ValidationError;
 
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.beans.Statement;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +51,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -206,6 +211,44 @@ public class CsvEngine {
     }
 
     /**
+     * Use to set a value of a field.
+     * This is a MONEYKEY enhancement. 
+     * Use reflection to identify bean attributes for csv column headers 
+     * where the column headers were NOT explicitly set using CsvEngine Annotation
+     *
+     * @param fieldName  the field to set.
+     * @param csvObject the objects to set.
+     * @param value     the value to set.
+     * @throws fr.ybonnel.csvengine.validator.ValidateException if the value isn't good.
+     */
+    private void setValeur(String fieldName,Object csvObject,String value) throws ValidateException {
+		String setterMethodName = "set"+ fieldName;
+		try {
+			for(PropertyDescriptor pd : Introspector.getBeanInfo(currentCsvClass.getClazz()).getPropertyDescriptors() ) {
+				if ( pd.getWriteMethod() != null && pd.getWriteMethod().getName().equalsIgnoreCase(setterMethodName) ) {
+					// LOGGER.info("Executing: "+ pd.getWriteMethod().getName() +" "+ value +" "+ pd.getPropertyType().getName() );
+					Object tmp = null;
+					switch( pd.getPropertyType().getName() ) {
+					case "int": tmp = Integer.parseInt(value);	break;
+					case "java.math.BigDecimal": tmp = new BigDecimal(Double.parseDouble(value));	break;
+					case "java.util.Date":	LOGGER.warning("Warning: Date field <"+ fieldName +"> must be set via CsvColumn() with format.");
+					default: tmp = value; 
+					}
+					Statement statement = new Statement(csvObject,pd.getWriteMethod().getName(), new Object[]{tmp});
+					statement.execute();
+				}
+			}
+		}
+		catch (IntrospectionException e) {
+			throw new ValidateException("Error in set", e );
+		}
+		catch (Exception e) {
+			throw new ValidateException("Error in set", e );
+		}
+    }
+
+
+    /**
      * Create an object from the current line of CSV.
      * {@link CsvEngine#newCsvFile} must be call before.
      *
@@ -296,6 +339,16 @@ public class CsvEngine {
                         fieldsValues, validationError, currentHeader[fieldNumber], exception);
             }
         }
+        else {
+        	// JGS....  CSV Annotated field doesn't exist for file heading; use a setter method if found.
+        	if ( parameters.getUseReflectionforMissingCsvColumNames() ) {
+	    		try {	setValeur(fieldName,csvObjects,value);	}
+	    		catch (ValidateException exception) {
+	    			validationError = addValidationMessage(
+	                    fieldsValues, validationError, currentHeader[fieldNumber], exception);
+	    		}
+        	}
+        }
         return validationError;
     }
 
@@ -372,6 +425,15 @@ public class CsvEngine {
             throw new CsvEngineException("The class " + clazz.getSimpleName() + " isn't managed");
         }
         csvReader = factory.createReaderCsv(reader, currentCsvClass.getSeparatorWithoutEscape());
+        for(int i = 0; i < this.getParameters().getNbLinesToSkipAtTopOfFile(); i++) {
+        	try {
+				String[] skippedLine = csvReader.readLine();
+			}
+			catch (IOException e) {
+	            throw new CsvEngineException(e);
+			}
+        }
+        
         try {
             currentHeader = csvReader.readLine();
         } catch (IOException e) {
@@ -547,6 +609,7 @@ public class CsvEngine {
         if (mapClasses.get(clazz) != null) {
             return;
         }
+        StringBuffer sb = new StringBuffer();
         CsvClass csvClass = new CsvClass(csvFile.separator(), clazz);
         for (Field field : clazz.getDeclaredFields()) {
             CsvColumn csvColumn = field.getAnnotation(CsvColumn.class);
@@ -555,9 +618,13 @@ public class CsvEngine {
             if (csvColumn != null) {
                 csvClass.setCsvField(csvColumn.value(), new CsvField(csvColumn, csvValidations, csvValidation, field));
                 csvClass.putOrder(csvColumn.value(), csvColumn.order());
+            } else {
+            	if ( sb.length() > 0 ) sb.append("; ");
+            	sb.append(field.getName() +" - "+ field.getType().getName() );
             }
         }
         mapClasses.put(clazz, csvClass);
+        if ( sb.length() > 0 ) LOGGER.warning("Using Bean setters for bean attributes with missing Csv Annotations: "+ sb.toString() );
     }
 
     /**

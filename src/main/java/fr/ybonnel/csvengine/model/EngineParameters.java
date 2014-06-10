@@ -84,7 +84,33 @@ public class EngineParameters {
 	public void setNbLinesWithErrorsToStop(int nbLinesWithErrorsToStop) {
 		this.nbLinesWithErrorsToStop = nbLinesWithErrorsToStop;
 	}
+	
+	
+	/**
+	 * @return Number of lines to skip at top of the file.
+	 */
+	private int nbLinesToSkipAtTopOfFile = 0;
+	
+	public int getNbLinesToSkipAtTopOfFile() { return nbLinesToSkipAtTopOfFile; }
+	
+	/**
+	 * Number of lines to skip at top of the file before reading the header columns.<br/>
+	 * 0 by default.
+	 * 
+	 * @param nbLinesToSkipAtTopOfFile
+	 *            Number of lines in error before stop.
+	 */
+	public void setNbLinesToSkipAtTopOfFile(int nbLinesToSkipAtTopOfFile) {
+		this.nbLinesToSkipAtTopOfFile = nbLinesToSkipAtTopOfFile;
+	}
 
+	/**
+	 * 
+	 */
+	private boolean useReflectionForMissingCsvColumnNames = false;
+	public boolean getUseReflectionforMissingCsvColumNames() {	return useReflectionForMissingCsvColumnNames;	}
+	public void setUseReflectionForMissingCsvAnnotatedColumnNames(boolean b) { this.useReflectionForMissingCsvColumnNames = b;	}
+	
 	/**
 	 * @return Activate of not the add of quote for a field.
 	 */
@@ -102,5 +128,4 @@ public class EngineParameters {
 	public void setAddQuoteCar(boolean addQuoteCar) {
 		this.addQuoteCar = addQuoteCar;
 	}
-
 }
