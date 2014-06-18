@@ -23,16 +23,16 @@ package fr.ybonnel.csvengine.adapter;
  * @author ybonnel
  * 
  */
-public class AdapterInteger extends AdapterCsv<Integer> {
+public class AdapterLong extends AdapterCsv<Long> {
 
     /**
-     * Transform a String into Integer.
+     * Transform a String into Long.
      *
      * @param string the string to transform.
      * @return the Integer transformed.
      */
-	public Integer parse(String string) {
-		return Integer.valueOf(string.trim());
+	public Long parse(String string) {
+		return Long.valueOf(string);
 	}
 
     /**
@@ -41,7 +41,7 @@ public class AdapterInteger extends AdapterCsv<Integer> {
      * @param object Integer to transform.
      * @return the resulting string.
      */
-	public String toString(Integer object) {
+	public String toString(Long object) {
 		return object.toString();
 	}
 }

@@ -1,3 +1,5 @@
+package fr.ybonnel.csvengine.adapter;
+
 /*
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -14,34 +16,39 @@
  * Contributors:
  *     ybonnel - initial API and implementation
  */
-package fr.ybonnel.csvengine.adapter;
+
+
+import com.moneykey.b2bjpa.model.enums.MaritalStatus;
+
+import fr.ybonnel.csvengine.adapter.AdapterCsv;
 
 /**
- * Adapter for Integer<br/><br/>
- * <i><u>French :</i> Adapteur pour les Integer.
- * 
+ * Adapter for Double<br/><br/>
+ * <i><u>French :</i> Adapteur pour les BigDecimal.
+ *
  * @author ybonnel
- * 
  */
-public class AdapterInteger extends AdapterCsv<Integer> {
+public class AdapterMaritalStatusCode extends AdapterCsv<String> {
+
 
     /**
-     * Transform a String into Integer.
+     * Transform a String into BigDecimal.
      *
      * @param string the string to transform.
-     * @return the Integer transformed.
+     * @return the BigDecimal transformed.
      */
-	public Integer parse(String string) {
-		return Integer.valueOf(string.trim());
-	}
+    public String parse(String string) {
+    	MaritalStatus status = MaritalStatus.valueOfTranDotComCode(string);
+    	return status.getCode();
+    }
 
     /**
-     * Transform an Integer into String.
+     * Transform a BigDecimal into String.
      *
-     * @param object Integer to transform.
+     * @param object BigDecimal to transform.
      * @return the resulting string.
      */
-	public String toString(Integer object) {
-		return object.toString();
-	}
+    public String toString(String object) {
+        return object.toString();
+    }
 }

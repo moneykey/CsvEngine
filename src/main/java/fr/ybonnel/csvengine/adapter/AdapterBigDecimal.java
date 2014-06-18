@@ -38,7 +38,7 @@ public class AdapterBigDecimal extends AdapterCsv<BigDecimal> {
      * @return the BigDecimal transformed.
      */
     public BigDecimal parse(String string) {
-        return BigDecimal.valueOf(Double.valueOf(string));
+        return BigDecimal.valueOf(Double.valueOf(string.trim()));
     }
 
     /**

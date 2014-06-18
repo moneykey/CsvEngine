@@ -59,6 +59,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -99,7 +101,29 @@ public class CsvEngine {
      * Map of managed classes.
      */
     private final Map<Class<?>, CsvClass> mapClasses = new HashMap<Class<?>, CsvClass>();
+    
+    /**
+     * Map of Missing setters.
+     * JGS - MoneyKey Enhancement.
+     */
+    private final Map<Class<?>, Set<String>> mapMissingSetters = new HashMap<Class<?>,Set<String>>();
 
+    public Map<Class<?>,Set<String>> getSkippedClassFieldMaps() {	return mapMissingSetters;	}
+    
+    public Set<String> getFieldsWithMissingSetters(Class<?> aClass) {
+		Set<String> fieldsWithoutSetters = this.mapMissingSetters.get(aClass);
+		if ( fieldsWithoutSetters == null ) fieldsWithoutSetters = new TreeSet<String>();
+    	return fieldsWithoutSetters;
+    }
+    
+    private boolean addFieldWithoutSetters(Class<?> aClass,String fieldName) {
+    	Set<String> fieldsWithoutSetters = this.getFieldsWithMissingSetters(aClass);
+    	if ( fieldsWithoutSetters == null ) fieldsWithoutSetters = new TreeSet<String>();
+    	boolean returnValue = fieldsWithoutSetters.add(fieldName);
+    	this.mapMissingSetters.put(aClass, fieldsWithoutSetters);
+    	return returnValue;
+    }
+    
     /**
      * Current header.
      */
@@ -222,6 +246,7 @@ public class CsvEngine {
      * @throws fr.ybonnel.csvengine.validator.ValidateException if the value isn't good.
      */
     private void setValeur(String fieldName,Object csvObject,String value) throws ValidateException {
+		boolean valueSetFlag = false;
 		String setterMethodName = "set"+ fieldName;
 		try {
 			for(PropertyDescriptor pd : Introspector.getBeanInfo(currentCsvClass.getClazz()).getPropertyDescriptors() ) {
@@ -236,6 +261,7 @@ public class CsvEngine {
 					}
 					Statement statement = new Statement(csvObject,pd.getWriteMethod().getName(), new Object[]{tmp});
 					statement.execute();
+					valueSetFlag = true;
 				}
 			}
 		}
@@ -244,6 +270,10 @@ public class CsvEngine {
 		}
 		catch (Exception e) {
 			throw new ValidateException("Error in set", e );
+		}
+		if ( ! valueSetFlag ) {
+			System.out.println("Cannot find any setters for CSV File field:"+ fieldName + " in Class: "+ csvObject.getClass().getCanonicalName() );
+			this.addFieldWithoutSetters(csvObject.getClass(),fieldName);
 		}
     }
 
@@ -624,7 +654,7 @@ public class CsvEngine {
             }
         }
         mapClasses.put(clazz, csvClass);
-        if ( sb.length() > 0 ) LOGGER.warning("Using Bean setters for bean attributes with missing Csv Annotations: "+ sb.toString() );
+        if ( sb.length() > 0 ) LOGGER.warning("Class: "+ clazz.getName() +" will attempt to use Bean setters for attributes with missing Csv Annotations: "+ sb.toString() );
     }
 
     /**
