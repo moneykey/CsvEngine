@@ -594,6 +594,7 @@ public class CsvEngine {
                         throw new CsvErrorsExceededException(errors);
                     }
                 } catch (StopParseException stopParseException) {
+                	System.out.println("********* CsvEngine eating runtime exception:"+ stopParseException.getLocalizedMessage() );
                     return errors;
                 }
             } while (object != null || hasValidationError);
