@@ -253,12 +253,15 @@ public class CsvEngine {
 				if ( pd.getWriteMethod() != null && pd.getWriteMethod().getName().equalsIgnoreCase(setterMethodName) ) {
 					// LOGGER.info("Executing: "+ pd.getWriteMethod().getName() +" "+ value +" "+ pd.getPropertyType().getName() );
 					Object tmp = null;
-					switch( pd.getPropertyType().getName() ) {
-					case "int": tmp = Integer.parseInt(value);	break;
-					case "java.math.BigDecimal": tmp = new BigDecimal(Double.parseDouble(value));	break;
-					case "java.util.Date":	LOGGER.warning("Warning: Date field <"+ fieldName +"> must be set via CsvColumn() with format.");
-					default: tmp = value; 
-					}
+					String	name = pd.getPropertyType().getName();
+					if( "int".equals( name ) )
+						tmp = Integer.parseInt(value);
+					if( "java.math.BigDecimal".equals( name ) )
+						tmp = new BigDecimal(Double.parseDouble(value));
+					if( "java.util.Date".equals( name ) )
+						LOGGER.warning("Warning: Date field <"+ fieldName +"> must be set via CsvColumn() with format.");
+					else 
+						tmp = value; 
 					Statement statement = new Statement(csvObject,pd.getWriteMethod().getName(), new Object[]{tmp});
 					statement.execute();
 					valueSetFlag = true;
